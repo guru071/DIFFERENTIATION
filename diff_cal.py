@@ -1,11 +1,19 @@
+        #******************************MAGH"S**********************
+        #Author:Sparrow
+        #problem:differentiation
+        #members:Aadhi,Abdhu Kapur,Guruprasath,Sathish,Monish,Harishmaran
+
+
 import os
 import subprocess
 import sys
 import time
 import tkinter
-from operator import index
 from tkinter.ttk import Label
-
+__VERSION__='0.1.7'
+__BRAND__="MAGH'S"
+__AUTHOR__="SPARROW"
+__MEMBERS__=list("Aadhi,Abdhu Kapur,Guruprasath,Sathish,Monish,Harishmaran".split(','))
 
 def gui_view() -> None:
     root=tkinter.Tk()
@@ -58,6 +66,7 @@ def console() ->None:
 
 
     print("""\033[35m
+                    Magh'S
     _________________________________________
     |   1.monotonicity                      |
     |   2.Extrema                           |
