@@ -10,10 +10,11 @@ import sys
 import time
 import tkinter
 from tkinter.ttk import Label
-__VERSION__='0.1.7'
+__VERSION__='2.1.7'
 __BRAND__="MAGH'S"
 __AUTHOR__="SPARROW"
 __MEMBERS__=list("Aadhi,Abdhu Kapur,Guruprasath,Sathish,Monish,Harishmaran".split(','))
+print(f"\033[35m\t\tversion:{__VERSION__}\n\t\tBrand:{__BRAND__}\n\t\tAuthor:{__AUTHOR__}\n\t\tMembers:{__MEMBERS__}\033[0m")
 
 def gui_view() -> None:
     root=tkinter.Tk()
@@ -31,7 +32,7 @@ def console() ->None:
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", package])
                 print(f"Module '{package}' installed successfully.")
-                __import__(package)  # Try importing again after installation
+                __import__(package)
             except subprocess.CalledProcessError as e:
                 print(f"Error installing module '{package}': {e}")
                 exit(0)
@@ -82,6 +83,145 @@ def console() ->None:
 
     funcWithInterval = input("Enter the function:") # get input of function
     interval=[]
+
+    def xy():
+        nonlocal func, interval
+        print(func)
+
+        import sympy as sp
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.mplot3d import Axes3D
+
+        x, y = sp.symbols("x y")
+        f = sp.sympify(func)
+
+        # 1st order partial derivatives
+        fx = sp.diff(f, x)
+        fy = sp.diff(f, y)
+
+        # 2nd order partial derivatives
+        fxx = sp.diff(f, x, 2)
+        fyy = sp.diff(f, y, 2)
+        fxy = sp.diff(sp.diff(f, x), y)
+
+        A = fxx
+        B = fxy
+        C = fyy
+
+        print("fx:", fx)
+        print("fy:", fy)
+
+        # ==========================================================
+        #  FIND STATIONARY POINTS
+        # ==========================================================
+        try:
+            sols = sp.solve([fx, fy], (x, y), dict=True)
+        except:
+            sols = []
+
+        print("Raw solutions:", sols)
+
+        stationary_pnt = []
+
+        for sol in sols:
+            if x in sol and y in sol:
+                stationary_pnt.append((sol[x], sol[y]))
+
+        print("Final stationary points:", stationary_pnt)
+
+        # ==========================================================
+        #  MONOTONICITY
+        # ==========================================================
+        print("\n=== Monotonicity ===")
+        print("Increasing in x where fx > 0")
+        print("Decreasing in x where fx < 0")
+        print("Increasing in y where fy > 0")
+        print("Decreasing in y where fy < 0")
+
+        # ==========================================================
+        #  HESSIAN + LOCAL EXTREMA CLASSIFICATION
+        # ==========================================================
+        print("\n=== Local Extrema (Hessian Test) ===")
+
+        for xv, yv in stationary_pnt:
+            xv_s, yv_s = sp.simplify(xv), sp.simplify(yv)
+
+            A_val = A.subs({x: xv_s, y: yv_s})
+            B_val = B.subs({x: xv_s, y: yv_s})
+            C_val = C.subs({x: xv_s, y: yv_s})
+
+            D = A_val * C_val - B_val ** 2
+
+            print(f"\nPoint: ({xv_s}, {yv_s})")
+            print("Hessian Determinant D =", D)
+
+            if D > 0 and A_val > 0:
+                print("→ Local Minimum")
+            elif D > 0 and A_val < 0:
+                print("→ Local Maximum")
+            elif D < 0:
+                print("→ Saddle Point")
+            else:
+                print("→ Inconclusive")
+
+        # ==========================================================
+        #  CHECK CONCAVITY & INFLECTION
+        # ==========================================================
+        print("\n=== Concavity / Convexity ===")
+        print("fxx:", fxx)
+        print("fyy:", fyy)
+        print("fxy:", fxy)
+        print("Concave where fxx < 0 and fyy < 0")
+        print("Convex where fxx > 0 and fyy > 0")
+
+        print("\n=== Possible Inflection Points ===")
+        print("Solve fxx = 0 or fyy = 0")
+
+        # ==========================================================
+        #   3D GRAPH + TANGENT PLANE
+        # ==========================================================
+        print("\nPlotting 3D Graph (please wait)...")
+
+        f_np = sp.lambdify((x, y), f, "numpy")
+        fx_np = sp.lambdify((x, y), fx, "numpy")
+        fy_np = sp.lambdify((x, y), fy, "numpy")
+
+        X = np.linspace(-1, 2, 70)
+        Y = np.linspace(-1, 2, 70)
+        Xg, Yg = np.meshgrid(X, Y)
+        Zg = f_np(Xg, Yg)
+
+        fig = plt.figure(figsize=(10, 7))
+        ax = fig.add_subplot(111, projection="3d")
+
+        # Plot the surface
+        ax.plot_surface(Xg, Yg, Zg, alpha=0.6)
+
+        # Add tangent plane for each critical point
+        for xv, yv in stationary_pnt:
+            xv_f, yv_f = float(xv), float(yv)
+            zv_f = f_np(xv_f, yv_f)
+
+            fxv = fx_np(xv_f, yv_f)
+            fyv = fy_np(xv_f, yv_f)
+
+            # Tangent plane
+            Zt = zv_f + fxv * (Xg - xv_f) + fyv * (Yg - yv_f)
+
+            # Plot plane
+            ax.plot_surface(Xg, Yg, Zt, alpha=0.3)
+
+            # Point on graph
+            ax.scatter(xv_f, yv_f, zv_f, s=70)
+
+        ax.set_title("3D Surface with Tangent Planes")
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("f(x,y)")
+
+        plt.show()
+
     if "&" in funcWithInterval:
         func, interval_ = tuple(funcWithInterval.split("&"))  # split the interval and function by &
         temp=interval_.split(' ')
@@ -93,6 +233,9 @@ def console() ->None:
         interval: list = []  # no input interval
         func = funcWithInterval  # store the input to function
     func = func.replace("^", "**")  # replace ^ in function to **
+    if 'x' in func and 'y'in func:
+        xy()
+        exit()
     x = sp.Symbol('x')  # it denote the variable of the function
     f = sp.sympify(func)  # pass function for sympify
 
@@ -278,6 +421,7 @@ def console() ->None:
                 plt.plot(x_value, [i["value"]] * len(x_value))
                 px=i["x="]
                 py=i["value"]
+                plt.scatter(px,py,s=10)
                 plt.annotate(f"({px},{py})", (px, py), textcoords="offset points", xytext=(10, 10))
         ax = plt.gca()
         '''ax.spines["left"].set_position("center")
